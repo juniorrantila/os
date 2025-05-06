@@ -1,0 +1,10 @@
+clang
+-ffreestanding
+--target=i386-freestanding
+-Wall
+-Wextra
+-pedantic
+-Werror
+-Wno-gnu-zero-variadic-macro-arguments
+-Isrc
+-I.
