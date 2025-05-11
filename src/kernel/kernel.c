@@ -1,16 +1,33 @@
 #include "./multiboot.h"
 
-#include <hardware/interrupt.h>
-#include <hardware/serial.h>
 #include <core/kprintf.h>
-#include <hardware/acpi.h>
 #include <core/string_view.h>
+#include <hardware/acpi.h>
+#include <hardware/interrupt.h>
+#include <hardware/io.h>
+#include <hardware/pci.h>
+#include <hardware/serial.h>
 
 #define MAX_ARGC 64
 
 i32 main(i32 argc, c_string argv[]);
 
 static i32 parse_args(StringView cmdline, i32 max_argc, c_string argv[]);
+
+static void count_devices(void* ctx, PCIDevice const* device)
+{
+    (void)device;
+    (*(u64*)ctx) += 1;
+}
+
+static void log_device(void* ctx, PCIDevice const* device)
+{
+    u64 device_index = (*(u64*)ctx)++;
+    kinfo("- [%llu]", device_index);
+    kinfo("  - bus: %u", device->bus);
+    kinfo("  - device: %u", device->device);
+    kinfo("  - function: %u", device->function);
+}
 
 __attribute__((noreturn))
 void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
@@ -24,6 +41,18 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
 
     if (!interrupt_init().ok) kpanic("could not initialize interrupts");
     if (!acpi_init().ok) kpanic("could not initialize acpi");
+
+    kinfo("testing PCI via manual probing...");
+    if (is_pci_io_supported()) kinfo("PCI IO supported");
+    else kinfo("PCI IO not supported");
+
+    u64 devices = 0;
+    pci_enumerate_devices(&devices, count_devices);
+    kinfo("PCI devices: %llu", devices);
+    if (devices != 0) {
+        u8 device_index = 0;
+        pci_enumerate_devices(&device_index, log_device);
+    }
 
     StringView cmdline = string_view_empty();
     if (info->flags & MULTIBOOT_INFO_CMDLINE) {
