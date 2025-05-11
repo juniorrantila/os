@@ -29,8 +29,7 @@ static void log_device(void* ctx, PCIDevice const* device)
     kinfo("  - function: %u", device->function);
 }
 
-__attribute__((noreturn))
-void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
+[[noreturn]] void kernel_main(u32 multiboot_magic, multiboot_info_t* info)
 {
     if (!serial_init(SERIAL_COM1)) shutdown();
     kprintf("\033[H\033[2J"); // Move top left and clear screen.
@@ -68,6 +67,8 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
         }
     }
 
+    pic_disable();
+    interrupt_enable();
     kinfo("running main...");
     i32 code = main(argc, argv);
     kinfo("exit code: %d", code);

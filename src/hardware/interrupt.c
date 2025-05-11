@@ -3,6 +3,7 @@
 #include <core/base.h>
 #include <core/kprintf.h>
 #include <hardware/io.h>
+#include <core/string.h>
 
 #define PIC1		0x20		/* IO base address for master PIC */
 #define PIC2		0xA0		/* IO base address for slave PIC */
@@ -62,9 +63,220 @@ void pic_disable(void) {
     out8(PIC2_DATA, 0xff);
 }
 
+// Note: These values are x86-64.
+#define GDT_SELECTOR_CODE0 0x08
+#define GDT_SELECTOR_DATA0 0x10
+#define GDT_SELECTOR_DATA3 0x18
+#define GDT_SELECTOR_CODE3 0x20
+#define GDT_SELECTOR_TSS 0x28
+#define GDT_SELECTOR_TSS_PART2 0x30
+
+typedef struct [[gnu::packed]] {
+    u16 limit;
+    void* address;
+} DescriptorTablePointer;
+
+typedef enum : u8 {
+  IDTEntryType_TaskGate32        = 0b0101,
+  IDTEntryType_InterruptGate16   = 0b110,
+  IDTEntryType_TrapGate16        = 0b111,
+  IDTEntryType_InterruptGate32   = 0b1110,
+  IDTEntryType_TrapGate32        = 0b1111,
+} IDTEntryType;
+
+typedef struct [[gnu::packed]] {
+    u16 offset_1; // offset bits 0..15
+    u16 selector; // a code segment selector in GDT or LDT
+
+    struct {
+        u8 interrupt_stack_table : 3;
+        u8 zero : 5; // unused, set to 0
+    };
+
+    struct {
+        u8 gate_type : 4;
+        u8 storage_segment : 1;
+        u8 descriptor_privilege_level : 2;
+        u8 present : 1;
+    } type_attr;  // type and attributes
+    u16 offset_2; // offset bits 16..31
+    u32 offset_3;
+    u32 zeros;
+} IDTEntry;
+static_assert(sizeof(IDTEntry) == 2 * sizeof(u64));
+
+static inline IDTEntry idt_entry(void* callback, u16 selector, IDTEntryType type, u8 privilege_level)
+{
+    return (IDTEntry){
+      .offset_1 = (u16)((u64)callback & 0xFFFF),
+      .selector = selector,
+      .interrupt_stack_table = 0,
+      .zero = 0,
+      .type_attr = {
+          .gate_type = (u8)type,
+          .storage_segment = 0,
+          .descriptor_privilege_level = (u8)(privilege_level & 0b11),
+          .present = 1,
+      },
+      .offset_2 = (u16)((u64)callback >> 16),
+      .offset_3 = (u32)(((u64)callback) >> 32),
+      .zeros = 0,
+    };
+}
+
+static DescriptorTablePointer s_idtr;
+static IDTEntry s_idt[256];
+
+[[gnu::interrupt]] static void interrupt_divideerror(void*, u32);
+[[gnu::interrupt]] static void interrupt_debug(void*, u32);
+[[gnu::interrupt]] static void interrupt_unknownerror(void*, u32);
+[[gnu::interrupt]] static void interrupt_breakpoint(void*, u32);
+[[gnu::interrupt]] static void interrupt_overflow(void*, u32);
+[[gnu::interrupt]] static void interrupt_boundscheck(void*, u32);
+[[gnu::interrupt]] static void interrupt_illegalinstruction(void*, u32);
+[[gnu::interrupt]] static void interrupt_fpuexception(void*, u32);
+[[gnu::interrupt]] static void interrupt_doublefault(void*, u32);
+[[gnu::interrupt]] static void interrupt_coprocessorsegmentoverrun(void*, u32);
+[[gnu::interrupt]] static void interrupt_invalidtss(void*, u32);
+[[gnu::interrupt]] static void interrupt_segmentnotpresent(void*, u32);
+[[gnu::interrupt]] static void interrupt_stackexception(void*, u32);
+[[gnu::interrupt]] static void interrupt_generalprotectionfault(void*, u32);
+[[gnu::interrupt]] static void interrupt_pagefault(void*, u32);
+[[gnu::interrupt]] static void interrupt_unknownerror2(void*, u32);
+[[gnu::interrupt]] static void interrupt_coprocessorerror(void*, u32);
+[[gnu::interrupt]] static void interrupt_unhandeled(void*, u32);
+
+static void flush_idt(void);
+
 KSuccess interrupt_init(void)
 {
-    pic_disable();
     kwarn_not_implemented();
+
+    s_idtr.address = s_idt;
+    s_idtr.limit = 256 * sizeof(IDTEntry) - 1;
+
+    for (u32 i = 0; i < 256; i++) {
+        interrupt_register(i, interrupt_unhandeled);
+    }
+
+    interrupt_register(Interrupt_DivideError, interrupt_divideerror);
+    interrupt_register(Interrupt_Debug, interrupt_debug);
+    interrupt_register(Interrupt_UnknownError, interrupt_unknownerror);
+    interrupt_register(Interrupt_Breakpoint, interrupt_breakpoint);
+    interrupt_register(Interrupt_Overflow, interrupt_overflow);
+    interrupt_register(Interrupt_BoundsCheck, interrupt_boundscheck);
+    interrupt_register(Interrupt_IllegalInstruction, interrupt_illegalinstruction);
+    interrupt_register(Interrupt_FPUException, interrupt_fpuexception);
+    interrupt_register(Interrupt_DoubleFault, interrupt_doublefault);
+    interrupt_register(Interrupt_CoprocessorSegmentOverrun, interrupt_coprocessorsegmentoverrun);
+    interrupt_register(Interrupt_InvalidTSS, interrupt_invalidtss);
+    interrupt_register(Interrupt_SegmentNotPresent, interrupt_segmentnotpresent);
+    interrupt_register(Interrupt_StackException, interrupt_stackexception);
+    interrupt_register(Interrupt_GeneralProtectionFault, interrupt_generalprotectionfault);
+    interrupt_register(Interrupt_PageFault, interrupt_pagefault);
+    interrupt_register(Interrupt_UnknownError2, interrupt_unknownerror2);
+    interrupt_register(Interrupt_CoprocessorError, interrupt_coprocessorerror);
+
+    flush_idt();
     return ksuccess();
+}
+
+void interrupt_register(u8 i, [[gnu::interrupt]] void (*handler)(void*, u32))
+{
+    s_idt[i] = idt_entry((void*)handler, GDT_SELECTOR_CODE0, IDTEntryType_InterruptGate32, 0);
+}
+
+static void flush_idt(void)
+{
+    __asm__("lidt %0" ::"m"(s_idtr));
+}
+
+[[gnu::interrupt]] static void interrupt_divideerror(void*, u32)
+{
+    kpanic("interrupt: divide by zero");
+}
+
+[[gnu::interrupt]] static void interrupt_debug(void*, u32)
+{
+    kpanic("interrupt: debug");
+}
+
+[[gnu::interrupt]] static void interrupt_unknownerror(void*, u32)
+{
+    kpanic("interrupt: unknown error");
+}
+
+[[gnu::interrupt]] static void interrupt_breakpoint(void*, u32)
+{
+    kpanic("interrupt: breakpoint");
+}
+
+[[gnu::interrupt]] static void interrupt_overflow(void*, u32)
+{
+    kpanic("interrupt: overflow");
+}
+
+[[gnu::interrupt]] static void interrupt_boundscheck(void*, u32)
+{
+    kpanic("interrupt: bounds check");
+}
+
+[[gnu::interrupt]] static void interrupt_illegalinstruction(void*, u32)
+{
+    kpanic("interrupt: illegal instruction");
+}
+
+[[gnu::interrupt]] static void interrupt_fpuexception(void*, u32)
+{
+    kpanic("interrupt: FPU exception");
+}
+
+[[gnu::interrupt]] static void interrupt_doublefault(void*, u32)
+{
+    kpanic("interrupt: double fault");
+}
+
+[[gnu::interrupt]] static void interrupt_coprocessorsegmentoverrun(void*, u32)
+{
+    kpanic("interrupt: coprocessor segment overrun");
+}
+
+[[gnu::interrupt]] static void interrupt_invalidtss(void*, u32)
+{
+    kpanic("interrupt: invalid tss");
+}
+
+[[gnu::interrupt]] static void interrupt_segmentnotpresent(void*, u32)
+{
+    kpanic("interrupt: segment not present");
+}
+
+[[gnu::interrupt]] static void interrupt_stackexception(void*, u32)
+{
+    kpanic("interrupt: stack exception");
+}
+
+[[gnu::interrupt]] static void interrupt_generalprotectionfault(void*, u32)
+{
+    kpanic("interrupt: general protection fault");
+}
+
+[[gnu::interrupt]] static void interrupt_pagefault(void*, u32)
+{
+    kpanic("interrupt: pagefault");
+}
+
+[[gnu::interrupt]] static void interrupt_unknownerror2(void*, u32)
+{
+    kpanic("interrupt: unknown error 2");
+}
+
+[[gnu::interrupt]] static void interrupt_coprocessorerror(void*, u32)
+{
+    kpanic("interrupt: coprocessor error");
+}
+
+[[gnu::interrupt]] static void interrupt_unhandeled(void*, u32 n)
+{
+    kpanic("interrupt: unhandled(%u)", n);
 }

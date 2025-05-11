@@ -3,7 +3,7 @@
 set -xe
 
 CC="ccache clang"
-CFLAGS="-m32 -mno-mmx -mno-sse -mno-sse2 -ffreestanding --target=i386-freestanding -std=c23 -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Isrc -O2 -nostdlib -mstack-alignment=8"
+CFLAGS="-Wno-excessive-regsave -m32 -mno-mmx -mno-sse -mno-sse2 -ffreestanding --target=i386-freestanding -std=c23 -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Isrc -O2 -nostdlib -mstack-alignment=8"
 
 mkdir -p build
 mkdir -p build/core
