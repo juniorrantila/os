@@ -46,12 +46,21 @@ u8 serial_read(u16 port)
 
 u32 serial_readline(u16 port, char* buf, u32 size)
 {
-    for (u32 i = 0; i < size; i++) {
+    StringView move_left = string_view("\033[1D\033[0K");
+    for (u32 i = 0; i < size;) {
         buf[i] = serial_read(port);
+        if (buf[i] == 0x7f) {
+            buf[i] = '\0';
+            if (i == 0) continue;
+            i -= 1;
+            serial_write_message(port, move_left);
+            continue;
+        }
         if (buf[i] == '\r') buf[i] = '\n';
         serial_write(port, buf[i]);
         if (buf[i] == '\n') buf[i] = '\0';
         if (buf[i] == '\0') return i;
+        i += 1;
     }
     return size;
 }
