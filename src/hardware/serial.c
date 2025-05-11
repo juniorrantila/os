@@ -28,6 +28,13 @@ bool serial_init(u16 port)
     return true;
 }
 
+u32 serial_write_message(u16 port, StringView message)
+{
+    for (u32 i = 0; i < message.count; i++)
+        serial_write(port, message.items[i]);
+    return message.count;
+}
+
 void serial_write(u16 port, u8 data)
 {
     while (!is_transmit_empty(port));
