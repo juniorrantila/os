@@ -23,5 +23,5 @@ start:
 align 16
 section .bss
 stack_begin:
-    resb 1 * 1024 * 1024
+    resb 32768
 stack_end:
