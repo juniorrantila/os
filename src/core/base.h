@@ -26,3 +26,15 @@ typedef _Bool bool;
 #define nullptr ((void*)0)
 #endif
 #endif
+
+typedef struct [[nodiscard]] { bool ok; } KSuccess;
+static inline KSuccess ksuccess() { return (KSuccess){true}; }
+static inline KSuccess kfailure() { return (KSuccess){false}; }
+
+typedef struct [[nodiscard]] { bool found; } KFound;
+static inline KFound kfound() { return (KFound){true}; }
+static inline KFound knotfound() { return (KFound){false}; }
+
+__attribute__((format(printf, 4, 5)))
+KSuccess kfail_impl(c_string func, c_string file, u32 line, c_string fmt, ...);
+#define kfail(fmt, ...) kfail_impl(__FUNCTION__, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
