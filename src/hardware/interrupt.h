@@ -1,6 +1,8 @@
 #pragma once
 #include <core/base.h>
 
+KSuccess interrupt_init(void);
+
 static inline void interrupt_disable(void)
 {
     __asm__ __volatile__("cli":::"memory");

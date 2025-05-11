@@ -1,5 +1,6 @@
 #include "./multiboot.h"
 
+#include <hardware/interrupt.h>
 #include <hardware/serial.h>
 #include <core/kprintf.h>
 #include <hardware/acpi.h>
@@ -21,6 +22,7 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
 
     multiboot_dump(info);
 
+    if (!interrupt_init().ok) kpanic("could not initialize interrupts");
     if (!acpi_init().ok) kpanic("could not initialize acpi");
 
     StringView cmdline = string_view_empty();
