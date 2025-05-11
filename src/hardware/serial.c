@@ -2,9 +2,6 @@
 
 #include "./io.h"
 
-static bool is_transmit_empty(u16);
-static bool serial_received(u16);
-
 bool serial_init(u16 port)
 {
     out8(port + 1, 0x00);    // Disable all interrupts
@@ -37,13 +34,13 @@ u32 serial_write_message(u16 port, StringView message)
 
 void serial_write(u16 port, u8 data)
 {
-    while (!is_transmit_empty(port));
+    while (!serial_poll_out(port));
     out8(port, data);
 }
 
 u8 serial_read(u16 port)
 {
-    while (!serial_received(port));
+    while (!serial_poll_in(port));
     return in8(port);
 }
 
@@ -59,11 +56,12 @@ u32 serial_readline(u16 port, char* buf, u32 size)
     return size;
 }
 
-static bool is_transmit_empty(u16 port) {
-    return in8(port + 5) & 0x20;
-}
-
-static bool serial_received(u16 port)
+bool serial_poll_in(u16 port)
 {
     return in8(port + 5) & 1;
+}
+
+bool serial_poll_out(u16 port)
+{
+    return in8(port + 5) & 0x20;
 }
