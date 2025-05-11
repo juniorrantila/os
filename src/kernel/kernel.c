@@ -17,9 +17,11 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
     if (!serial_init(SERIAL_COM1)) shutdown();
     kprintf("\033[H\033[2J"); // Move top left and clear screen.
     kassert(multiboot_magic == 0x2BADB002);
-    klogf("Hello, World!");
+    kinfo("Hello, World!");
 
     multiboot_dump(info);
+
+    if (!acpi_init().ok) kpanic("could not initialize acpi");
 
     StringView cmdline = string_view_empty();
     if (info->flags & MULTIBOOT_INFO_CMDLINE) {
