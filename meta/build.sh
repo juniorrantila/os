@@ -15,6 +15,7 @@ echo '*' > build/.gitignore
 $CC -c $CFLAGS src/core/arith64.c -o build/core/arith64.o
 $CC -c $CFLAGS src/core/kprintf.c -o build/core/kprintf.o -Wno-unused-function
 
+$CC -c $CFLAGS src/hardware/io.c     -o build/hardware/io.o
 $CC -c $CFLAGS src/hardware/acpi.c   -o build/hardware/acpi.o
 $CC -c $CFLAGS src/hardware/serial.c -o build/hardware/serial.o
 
@@ -33,6 +34,7 @@ ld.lld \
     -o kernel \
     build/core/arith64.o \
     build/core/kprintf.o \
+    build/hardware/io.o \
     build/hardware/acpi.o \
     build/hardware/serial.o \
     build/kernel/kernel.o \

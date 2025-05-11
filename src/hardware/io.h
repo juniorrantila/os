@@ -1,34 +1,56 @@
 #pragma once
 #include <core/base.h>
 
-static inline u8 inb(u16 port)
+static inline u8 in8(u16 port)
 {
-    u8 result;
-    __asm__ __volatile__(
-        "xorl %%eax, %%eax\n"
-        "inb %%dx, %%al\n"
-        :"=a"(result)
-        :"d"(port)
-    );
-    return result;
+  u8 value;
+  __asm__ __volatile__(
+    "inb %1, %0"
+    : "=a"(value)
+    : "Nd"(port)
+);
+  return value;
 }
 
-static inline void outb(u16 port, u8 data)
+static inline u16 in16(u16 port)
 {
-    __asm__ __volatile__(
-        "outb %%al, %%dx"::"a"(data), "d"(port)
-    );
+  u16 value;
+  __asm__ __volatile__(
+      "inw %1, %0"
+      : "=a"(value)
+      : "Nd"(port)
+  );
+  return value;
 }
 
-static inline u16 inw(u16 port)
+static inline u32 in32(u16 port)
 {
-    u16 a = inb(port + 0);
-    u16 b = inb(port + 1);
-    return a << 8 | b;
+  u32 value;
+  __asm__ __volatile__(
+      "inl %1, %0"
+      : "=a"(value)
+      : "Nd"(port)
+  );
+  return value;
 }
 
-static inline void outw(u16 port, u16 data)
+static inline void out8(u16 port, u8 value)
 {
-    outb(port + 0, (data & 0x00FF) >> 0);
-    outb(port + 1, (data & 0xFF00) >> 8);
+    __asm__ __volatile__("outb %0, %1" ::"a"(value), "Nd"(port));
+}
+
+static inline void out16(u16 port, u16 value)
+{
+    __asm__ __volatile__("outw %0, %1" ::"a"(value), "Nd"(port));
+}
+
+static inline void out32(u16 port, u32 value)
+{
+    __asm__ __volatile__("outl %0, %1" ::"a"(value), "Nd"(port));
+}
+
+static inline void delay(u64 microseconds)
+{
+    for (u64 i = 0; i < microseconds; i++)
+        in8(0x80);
 }
