@@ -1,7 +1,7 @@
 #pragma once
 #include <core/base.h>
 
-#define SERIAL_COM1 0x3f8
+static const u16 SERIAL_COM1 = 0x3f8;
 
 bool serial_init(u16 port);
 void serial_write(u16 port, u8);
