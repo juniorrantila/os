@@ -8,7 +8,7 @@ typedef struct {
     u32 count;
 } StringView;
 
-static inline StringView string_view(char* s)
+static inline StringView string_view(mut_c_string s)
 {
     kassert(s != nullptr);
     return (StringView){

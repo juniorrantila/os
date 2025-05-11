@@ -17,6 +17,7 @@ typedef __SIZE_TYPE__ usize;
 typedef __INTPTR_TYPE__ isize;
 
 typedef char const* c_string;
+typedef char* mut_c_string;
 
 #ifndef __cplusplus
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ <= 201710L
