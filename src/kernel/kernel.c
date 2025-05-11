@@ -68,6 +68,8 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
         }
     }
 
+    pic_disable();
+    interrupt_enable();
     kinfo("running main...");
     i32 code = main(argc, argv);
     kinfo("exit code: %d", code);

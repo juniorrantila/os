@@ -1,4 +1,5 @@
 clang
+-Wno-excessive-regsave
 -ffreestanding
 --target=i386-freestanding
 -std=c23
