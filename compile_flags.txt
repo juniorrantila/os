@@ -1,6 +1,7 @@
 clang
 -ffreestanding
 --target=i386-freestanding
+-std=c23
 -Wall
 -Wextra
 -pedantic

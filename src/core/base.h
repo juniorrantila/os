@@ -19,9 +19,10 @@ typedef __INTPTR_TYPE__ isize;
 typedef char const* c_string;
 
 #ifndef __cplusplus
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ <= 201710L
 typedef _Bool bool;
 #define true  ((bool)1)
 #define false ((bool)0)
-
 #define nullptr ((void*)0)
+#endif
 #endif
