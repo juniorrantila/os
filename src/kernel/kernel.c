@@ -29,16 +29,16 @@ void kernel_main(unsigned int multiboot_magic, multiboot_info_t* info)
     static c_string argv[MAX_ARGC];
     i32 argc = parse_args(cmdline, MAX_ARGC, argv);
     if (argc) {
-        klogf("args(%d):", argc);
+        kinfo("args(%d):", argc);
         for (int i = 0; i < argc; i++) {
-            klogf("  - [%d]: '%s'", i, argv[i]);
+            kinfo("  - [%d]: '%s'", i, argv[i]);
         }
     }
 
-    klogf("running main...");
+    kinfo("running main...");
     i32 code = main(argc, argv);
-    klogf("exit code: %d", code);
-    klogf("shutting down...");
+    kinfo("exit code: %d", code);
+    kinfo("shutting down...");
     shutdown();
 }
 
