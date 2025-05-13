@@ -4,8 +4,8 @@
 #define STB_SPRINTF_IMPLEMENTATION
 #include "./stb_printf.h"
 
-#include <hardware/serial.h>
-#include <hardware/acpi.h>
+#include <arch/i386/serial.h>
+#include <arch/i386/acpi.h>
 
 #define RED    "\033[1;31m"
 #define YELLOW "\033[1;33m"

@@ -1,8 +1,9 @@
 #include "./interrupt.h"
 
+#include "./io.h"
+
 #include <core/base.h>
 #include <core/kprintf.h>
-#include <hardware/io.h>
 #include <core/string.h>
 
 #define PIC1		0x20		/* IO base address for master PIC */
@@ -193,7 +194,9 @@ static void flush_idt(void)
 
 [[gnu::interrupt]] static void interrupt_divideerror(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: divide by zero");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_debug(void*, u32)
@@ -203,12 +206,16 @@ static void flush_idt(void)
 
 [[gnu::interrupt]] static void interrupt_unknownerror(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: unknown error");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_breakpoint(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: breakpoint");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_overflow(void*, u32)
@@ -218,65 +225,91 @@ static void flush_idt(void)
 
 [[gnu::interrupt]] static void interrupt_boundscheck(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: bounds check");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_illegalinstruction(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: illegal instruction");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_fpuexception(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: FPU exception");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_doublefault(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: double fault");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_coprocessorsegmentoverrun(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: coprocessor segment overrun");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_invalidtss(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: invalid tss");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_segmentnotpresent(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: segment not present");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_stackexception(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: stack exception");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_generalprotectionfault(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: general protection fault");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_pagefault(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: pagefault");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_unknownerror2(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: unknown error 2");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_coprocessorerror(void*, u32)
 {
+    interrupt_disable();
     kpanic("interrupt: coprocessor error");
+    interrupt_enable();
 }
 
 [[gnu::interrupt]] static void interrupt_unhandeled(void*, u32 n)
 {
+    interrupt_disable();
     kpanic("interrupt: unhandled(%u)", n);
+    interrupt_enable();
 }

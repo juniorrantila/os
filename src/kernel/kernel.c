@@ -2,11 +2,12 @@
 
 #include <core/kprintf.h>
 #include <core/string_view.h>
-#include <hardware/acpi.h>
-#include <hardware/interrupt.h>
-#include <hardware/io.h>
-#include <hardware/pci.h>
-#include <hardware/serial.h>
+
+#include <arch/i386/acpi.h>
+#include <arch/i386/interrupt.h>
+#include <arch/i386/io.h>
+#include <arch/i386/pci.h>
+#include <arch/i386/serial.h>
 
 #define MAX_ARGC 64
 

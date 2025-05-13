@@ -5,42 +5,41 @@ set -xe
 CC="ccache clang"
 CFLAGS="-Wno-excessive-regsave -m32 -mno-mmx -mno-sse -mno-sse2 -ffreestanding --target=i386-freestanding -std=c23 -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Isrc -O2 -nostdlib -mstack-alignment=8"
 
-mkdir -p build
-mkdir -p build/core
-mkdir -p build/hardware
-mkdir -p build/kernel
-mkdir -p build/prekernel
-echo '*' > build/.gitignore
+mkdir -p build/i386
+mkdir -p build/i386/core
+mkdir -p build/i386/arch/i386
+mkdir -p build/i386/kernel
+mkdir -p build/i386/prekernel
 
-$CC -c $CFLAGS src/core/arith64.c -o build/core/arith64.o
-$CC -c $CFLAGS src/core/kprintf.c -o build/core/kprintf.o -Wno-unused-function
+$CC -c $CFLAGS src/core/arith64.c -o build/i386/core/arith64.o
+$CC -c $CFLAGS src/core/kprintf.c -o build/i386/core/kprintf.o -Wno-unused-function
 
-$CC -c $CFLAGS src/hardware/acpi.c      -o build/hardware/acpi.o
-$CC -c $CFLAGS src/hardware/interrupt.c -o build/hardware/interrupt.o
-$CC -c $CFLAGS src/hardware/pci.c       -o build/hardware/pci.o
-$CC -c $CFLAGS src/hardware/serial.c    -o build/hardware/serial.o
+$CC -c $CFLAGS src/arch/i386/acpi.c      -o build/i386/arch/i386/acpi.o
+$CC -c $CFLAGS src/arch/i386/interrupt.c -o build/i386/arch/i386/interrupt.o
+$CC -c $CFLAGS src/arch/i386/pci.c       -o build/i386/arch/i386/pci.o
+$CC -c $CFLAGS src/arch/i386/serial.c    -o build/i386/arch/i386/serial.o
 
-$CC -c $CFLAGS src/kernel/kernel.c    -o build/kernel/kernel.o
-$CC -c $CFLAGS src/kernel/multiboot.c -o build/kernel/multiboot.o
+$CC -c $CFLAGS src/kernel/kernel.c    -o build/i386/kernel/kernel.o
+$CC -c $CFLAGS src/kernel/multiboot.c -o build/i386/kernel/multiboot.o
 
-$CC -c $CFLAGS src/main.c -o build/main.o
+$CC -c $CFLAGS src/main.c -o build/i386/main.o
 
-nasm -felf32 src/prekernel/multiboot_header.nasm -o build/prekernel/multiboot_header.o
-nasm -felf32 src/prekernel/start.nasm            -o build/prekernel/start.o
+nasm -felf32 src/prekernel/multiboot_header.nasm -o build/i386/prekernel/multiboot_header.o
+nasm -felf32 src/prekernel/start.nasm            -o build/i386/prekernel/start.o
 
 ld.lld \
     -m elf_i386 \
     --nmagic \
     -T meta/linker.ld \
-    -o kernel \
-    build/core/arith64.o \
-    build/core/kprintf.o \
-    build/hardware/acpi.o \
-    build/hardware/interrupt.o \
-    build/hardware/pci.o \
-    build/hardware/serial.o \
-    build/kernel/kernel.o \
-    build/kernel/multiboot.o \
-    build/prekernel/multiboot_header.o \
-    build/prekernel/start.o \
-    build/main.o
+    -o kernel.i386 \
+    build/i386/core/arith64.o \
+    build/i386/core/kprintf.o \
+    build/i386/arch/i386/acpi.o \
+    build/i386/arch/i386/interrupt.o \
+    build/i386/arch/i386/pci.o \
+    build/i386/arch/i386/serial.o \
+    build/i386/kernel/kernel.o \
+    build/i386/kernel/multiboot.o \
+    build/i386/prekernel/multiboot_header.o \
+    build/i386/prekernel/start.o \
+    build/i386/main.o

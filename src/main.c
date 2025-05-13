@@ -1,9 +1,8 @@
-#include <hardware/interrupt.h>
-#include <core/kprintf.h>
 #include <core/base.h>
+
+#include <arch/i386/serial.h>
+#include <core/kprintf.h>
 #include <core/string_view.h>
-#include <hardware/serial.h>
-#include <hardware/io.h>
 
 typedef enum {
     Command_Count,
